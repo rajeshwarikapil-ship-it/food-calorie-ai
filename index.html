@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Food Calorie App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+      padding: 20px;
+      max-width: 480px;
+      margin: auto;
+    }
+
+    .card {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      margin: 15px 0;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #0d6efd;
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0b5ed7;
+    }
+
+    .note {
+      font-size: 13px;
+      color: gray;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    .pro-box {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px dashed #ccc;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+
+    .pro-box h3 {
+      margin-top: 0;
+      color: #6f42c1;
+    }
+
+    .pro-box ul {
+      padding-left: 18px;
+    }
+
+    .pro-note {
+      font-size: 13px;
+      color: gray;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="card">
+    <h2>🍽️ AI Plate Calorie Checker</h2>
+
+    <form action="/upload" method="post" enctype="multipart/form-data">
+      <input type="file" name="image" accept="image/*" required />
+      <button type="submit">Analyze Full Plate</button>
+    </form>
+
+    <p class="note">
+      Upload a photo of your full meal plate.<br>
+      AI estimates total calories (approximate).
+    </p>
+
+    <!-- ===== PRO UI COPY (STEP 9B) ===== -->
+    <div class="pro-box">
+      <h3>💎 Go Pro</h3>
+      <ul>
+        <li>Unlimited AI plate scans</li>
+        <li>Daily calorie history & totals</li>
+        <li>Better food detection accuracy</li>
+        <li>Mobile app access</li>
+      </ul>
+      <p class="pro-note">
+        Pro version launching soon
+      </p>
+    </div>
+    <!-- ===== END PRO UI COPY ===== -->
+
+  </div>
+
+</body>
+</html>
