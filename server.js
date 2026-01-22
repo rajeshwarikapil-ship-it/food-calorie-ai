@@ -65,7 +65,7 @@ No explanation. One word only.
     // NOT FOOD → STOP HERE
     if (verdict !== "FOOD") {
       return res.send(`
-        <div style="max-width:420px;margin:40px auto;font-family:Arial;background:#fff;padding:20px;border-radius:12px">
+<div style="max-width:420px;margin:40px auto;font-family:Arial;background:#ffffff;padding:28px;border-radius:16px;font-size:18px;line-height:1.6;box-shadow:0 10px 30px rgba(0,0,0,0.08);text-align:center">
           <h2>⚠️ No food detected</h2>
           <p>Please upload a clear image of food or a meal.</p>
           <a href="/">🔁 Try again</a>
@@ -78,7 +78,7 @@ No explanation. One word only.
     const caloriesMax = 850;
 
     return res.send(`
-      <div style="max-width:420px;margin:40px auto;font-family:Arial;background:#fff;padding:20px;border-radius:12px">
+<div style="max-width:420px;margin:40px auto;font-family:Arial;background:#ffffff;padding:28px;border-radius:16px;font-size:18px;line-height:1.6;box-shadow:0 10px 30px rgba(0,0,0,0.08);text-align:center">
         <h2>🍽️ Whole Plate Analysis</h2>
         <p><strong>Estimated calories:</strong> ${caloriesMin} – ${caloriesMax} kcal</p>
 
