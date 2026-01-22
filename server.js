@@ -1,112 +1,158 @@
-const express = require("express");
-const multer = require("multer");
-const path = require("path");
+import express from "express";
+import multer from "multer";
+import fs from "fs";
+import OpenAI from "openai";
 
 const app = express();
-const PORT = 3000;
-
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static(__dirname));
-
 const upload = multer({ dest: "uploads/" });
 
-/* =====================
-   CONFIG
-===================== */
-const DAILY_LIMIT = 3;
-const IS_PRO = false; // ← change to true to demo PRO
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static("public"));
 
-const usage = {};   // { ip: { date, count } }
-const history = {}; // { ip: { date, records: [] } }
-
-function today() {
-  return new Date().toDateString();
-}
-
-/* =====================
-   ROUTES
-===================== */
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY
 });
 
-app.post("/upload", upload.single("image"), (req, res) => {
-  const ip = req.ip;
-  const date = today();
+app.get("/", (req, res) => {
+  res.sendFile(process.cwd() + "/index.html");
+});
 
-  if (!usage[ip] || usage[ip].date !== date) {
-    usage[ip] = { date, count: 0 };
-    history[ip] = { date, records: [] };
+app.post("/upload", upload.single("image"), async (req, res) => {
+  if (!req.file) {
+    return res.send(renderError("No image uploaded"));
   }
 
-  if (!IS_PRO && usage[ip].count >= DAILY_LIMIT) {
-    return res.send(`
-      <h2>🚫 Free Limit Reached</h2>
-      <p>You have used ${DAILY_LIMIT} free scans today.</p>
-      <p><strong>Upgrade to Pro</strong> to unlock:</p>
-      <ul>
-        <li>📊 Daily calorie history</li>
-        <li>🤖 Unlimited AI scans</li>
-        <li>📱 Mobile app access</li>
-      </ul>
-      <a href="/">← Go back</a>
-    `);
-  }
+  try {
+    const imageBuffer = fs.readFileSync(req.file.path);
 
-  usage[ip].count++;
+    const response = await openai.responses.create({
+      model: "gpt-4.1-mini",
+      input: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text:
+                "Analyze this image. First decide if this image contains FOOD. " +
+                "If it does NOT contain food, respond ONLY with: NOT_FOOD. " +
+                "If it DOES contain food, respond with a short food description."
+            },
+            {
+              type: "input_image",
+              image_base64: imageBuffer.toString("base64")
+            }
+          ]
+        }
+      ]
+    });
 
-  /* ===== AI RESULT (STABLE MOCK, AI ALREADY WORKING) ===== */
-  const minCalories = 650;
-  const maxCalories = 850;
-  const now = new Date().toLocaleTimeString();
+    const aiText =
+      response.output_text?.trim().toUpperCase() || "";
 
-  history[ip].records.push({
-    time: now,
-    calories: `${minCalories} – ${maxCalories}`
-  });
-
-  const totalToday = history[ip].records.length * 750;
-
-  const historyHTML = history[ip].records
-    .map(r => `<li>${r.time} — ${r.calories} kcal</li>`)
-    .join("");
-
-  res.send(`
-    <h2>🍽️ Whole Plate Analysis</h2>
-    <p><strong>Estimated calories:</strong> ${minCalories} – ${maxCalories} kcal</p>
-
-    <hr/>
-
-    ${
-      IS_PRO
-        ? `
-          <h3>📊 Today’s History</h3>
-          <ul>${historyHTML}</ul>
-          <p><strong>Total today:</strong> ${totalToday} kcal</p>
-        `
-        : `
-          <p style="color:gray">
-            🔒 Daily history is a <strong>Pro feature</strong>
-          </p>
-        `
+    if (aiText.includes("NOT_FOOD")) {
+      return res.send(renderError(
+        "This image does not appear to contain food. Please upload a food plate."
+      ));
     }
 
+    // FOOD CONFIRMED → show calories
+    return res.send(renderResult());
+
+  } catch (err) {
+    console.error(err);
+    return res.send(renderError("AI analysis failed. Try again."));
+  } finally {
+    fs.unlinkSync(req.file.path);
+  }
+});
+
+function renderResult() {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f5f6f7;
+  margin: 0;
+  padding: 0;
+}
+.container {
+  max-width: 420px;
+  margin: 40px auto;
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+h2 { margin-top: 0; }
+hr { margin: 16px 0; }
+.pro {
+  background: #f0f7ff;
+  padding: 12px;
+  border-radius: 8px;
+}
+a { color: #0066ff; text-decoration: none; }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h2>🍽 Whole Plate Analysis</h2>
+    <p><strong>Estimated calories:</strong> 650 – 850 kcal</p>
     <hr/>
-    <h3>💎 Go Pro</h3>
-    <ul>
-      <li>Unlimited AI scans</li>
-      <li>Daily calorie history</li>
-      <li>Better AI accuracy</li>
-      <li>Mobile app access</li>
-    </ul>
-
+    <p>🔒 Daily history is a <strong>Pro feature</strong></p>
+    <div class="pro">
+      <strong>💎 Go Pro</strong>
+      <ul>
+        <li>Unlimited AI scans</li>
+        <li>Daily calorie history</li>
+        <li>Better accuracy</li>
+        <li>Mobile app access</li>
+      </ul>
+    </div>
+    <br/>
     <a href="/">← Analyze another plate</a>
-  `);
-});
+  </div>
+</body>
+</html>
+`;
+}
 
-/* =====================
-   START
-===================== */
-app.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+function renderError(message) {
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+body {
+  font-family: Arial, sans-serif;
+  background: #f5f6f7;
+}
+.container {
+  max-width: 420px;
+  margin: 60px auto;
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+}
+</style>
+</head>
+<body>
+  <div class="container">
+    <h3>⚠️ ${message}</h3>
+    <br/>
+    <a href="/">Try again</a>
+  </div>
+</body>
+</html>
+`;
+}
+
+app.listen(process.env.PORT || 3000, () =>
+  console.log("Server running")
+);
